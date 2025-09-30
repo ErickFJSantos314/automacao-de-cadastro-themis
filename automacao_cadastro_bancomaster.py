@@ -19,9 +19,9 @@ print(dadoscadastro)
 
 driver = webdriver.Edge()
 wait = WebDriverWait(driver, 2)
-driver.get ("https://amorimmarinho.themisweb.penso.com.br/amorimmarinho/login")
+driver.get ("https://******************************") #Domínio privado oculto
 login = driver.find_element(By.ID, "login")
-senha = driver.find_element(By.ID, "senha")
+senha = driver.find_element(By.ID, "senha") #login oculto informações sensíveis
 acessar = driver.find_element(By.ID, "btnLogin")
 acessar.click()
 
@@ -175,9 +175,9 @@ for index, row in dadoscadastro.iterrows():
     for caractere in str(data):
         distribuicao.send_keys(caractere)
         time.sleep(0.1)
-    numeroprocesso.click() # Clica fora do campo de data para fechar o calendário/mascara
+    numeroprocesso.click()
 
-# ... (Seu código anterior, sem alterações)
+
 
     valordacausa = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="processoValorCausaFormatado"]')))
     valordacausa.clear()
@@ -188,54 +188,49 @@ for index, row in dadoscadastro.iterrows():
     time.sleep(2)
     #advg.contra
 
-    time.sleep(0.5) # Pequena pausa para a UI e validação reagirem
+    time.sleep(0.5)
 
 
     #advg.contra
 
     advgcontra_dropdown = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="s2id_processoAdvogadoContra"]/a')))
     advgcontra_dropdown.click()
-    time.sleep(0.5) # Pausa para o dropdown abrir e o campo de busca aparecer
+    time.sleep(0.5) 
 
     advgcontratexto = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="s2id_autogen12_search"]')))
-    advgcontratexto.send_keys(str(advcontra)) # Envia o texto para o campo de busca
+    advgcontratexto.send_keys(str(advcontra))
 
-    time.sleep(1.5) # Dê um tempo para as sugestões carregarem ou para "Nenhum resultado" aparecer
+    time.sleep(1.5)
 
     try:
-        # Tenta encontrar e clicar na primeira sugestão de resultado (se houver).
         select2_result_label = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, 'select2-result-label')))
         select2_result_label.click()
         print(f"Advogado '{advcontra}' selecionado via sugestão.")
         
-    except TimeoutException: # Este 'except' é ativado se 'select2-result-label' NÃO for encontrado a tempo.
-        # Agora, dentro deste 'except', tentamos VERIFICAR se a mensagem "Nenhum resultado encontrado" apareceu.
+    except TimeoutException:
         try:
-            # Espera explicitamente pela visibilidade do elemento "Nenhum resultado encontrado"
+
             no_results_element = wait.until(EC.visibility_of_element_located((By.XPATH, '//li[@class="select2-no-results" and contains(text(), "Nenhum resultado encontrado")]')))
             
-            # Se a linha acima NÃO levanta TimeoutException, significa que "Nenhum resultado encontrado" foi encontrado.
+
             print(f"Nenhum resultado encontrado para o advogado '{advcontra}'. Adicionando novo...")
             
-            # --- NOVO TRECHO CRÍTICO DE BLUR/FECHAMENTO DO SELECT2 ANTES DE CLICAR EM ADCADV ---
-            # Tentar enviar ESCAPE para fechar o dropdown/limpar o foco do campo de busca.
-            # É crucial que o advgcontratexto perca o foco para que 'adcadv' fique clicável.
-            advgcontratexto.send_keys(Keys.ESCAPE)
-            time.sleep(0.5) # Pequena pausa para a UI reagir
 
-            # Opcional, mas recomendado: Esperar que a máscara/dropdown do Select2 desapareça.
-            # Isso garante que o elemento 'adicionarNAdvogadoContra' não esteja mais interceptado.
+            advgcontratexto.send_keys(Keys.ESCAPE)
+            time.sleep(0.5)
+
+
             try:
                 wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '#select2-drop')))
                 wait.until(EC.invisibility_of_element_located((By.CLASS_NAME, 'select2-drop-mask')))
                 print("Dropdown do Select2 fechado antes de clicar em 'Adicionar Novo Advogado'.")
             except TimeoutException:
                 print("Máscara/dropdown do Select2 não desapareceu a tempo. Tentando clique no 'Adicionar Novo Advogado' via JavaScript como fallback.")
-            # --- FIM NOVO TRECHO ---
+
 
             adcadv = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="adicionarNAdvogadoContra"]')))
             
-            # Tenta clicar normalmente primeiro. Se ainda der erro de interceptação, use o JS.
+
             try:
                 adcadv.click()
                 print("Clicado em 'Adicionar Novo Advogado' normalmente.")
@@ -244,42 +239,40 @@ for index, row in dadoscadastro.iterrows():
                 driver.execute_script("arguments[0].click();", adcadv)
                 print("Clicado em 'Adicionar Novo Advogado' via JavaScript.")
 
-            # Continua com a lógica para adicionar um novo advogado
+
             nomeadvcontra = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="nomePessoa"]')))
             nomeadvcontra.send_keys(str(advcontra))
             time.sleep(0.1)
             
             salvarpessoa = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="btnSubmitProcessoPessoaSalva"]')))
             salvarpessoa.click()
-            time.sleep(2.5) # Pausa para o modal de salvar pessoa fechar
-            
-            # Esta espera já estava aqui, é boa para esperar o modal fechar.
+            time.sleep(2.5) 
             wait.until(EC.invisibility_of_element_located((By.CLASS_NAME, 'select2-drop-mask'))) 
             print(f"Novo advogado '{advcontra}' adicionado e selecionado.")
             
-        except TimeoutException: # Este 'except' interno é ativado se NEM o label de resultado NEM a mensagem "Nenhum resultado" foram encontrados.
+        except TimeoutException:
             print(f"Timeout: Nenhuma sugestão ou 'Nenhum resultado encontrado' para '{advcontra}' em tempo hábil. Prosseguindo ou tentando ENTER como fallback.")
-            # Neste ponto, tentamos um Keys.ENTER para ver se ele seleciona um único resultado.
+
             advgcontratexto.send_keys(Keys.ENTER)
-            time.sleep(1) # Pequena pausa após ENTER
+            time.sleep(1) 
             try:
                  wait.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, '#select2-drop')))
                  print(f"Advogado '{advcontra}' possivelmente selecionado após ENTER (fallback).")
             except TimeoutException:
                  print("Dropdown ainda visível após ENTER. Advogado pode não ter sido selecionado ou erro não tratado.")
 
-    # Lógica de salvar o processo (fora do try-except do advogado)
+
     salvar = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="btnSubmitProcesso"]')))
     driver.execute_script("arguments[0].scrollIntoView();", salvar)
     salvar.click()
 
     time.sleep(3)
 
-    # Verificador e driver.back() (fora do try-except do advogado, mas dentro do loop 'for index, row')
+
     try:
         verificador = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="cabecalho"]/h3/span')))
         print(f"Processo cadastrado com sucesso. Título da página: {verificador.text}")
     except TimeoutException:
         print("Erro: Não foi possível verificar o cadastro do processo. Página pode não ter carregado como esperado.")
     driver.back()
-    time.sleep(2) # Pausa para a página carregar após o back
+    time.sleep(2)
